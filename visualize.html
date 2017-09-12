@@ -1,0 +1,766 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:v-on="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="UTF-8">
+    <title>Visualize</title>
+    <link rel="stylesheet" href="css/base/base.css">
+    <link rel="stylesheet" href="css/common.css">
+    <link rel="stylesheet" href="css/chu-element.css">
+    <link rel="stylesheet" href="css/visualize.css">
+    <script src="js/base/jquery-3.2.1.min.js"></script>
+    <script>
+        //加载后计算各个模块是适应大小
+        window.onload = function () {
+            $(".aside").css("height", $(window).height() - 55 + "px");
+            $(".main").css("height", $(window).height() - 55 + "px");
+            $(".choose_fields").css("height", $(window).height() - 55 + "px");
+            $(".edit_chart").css("height", $(window).height() - 55 + "px");
+            $(".chart_tools").css("height", ($(window).height() - 55) * 0.05 + "px");
+            $(".chart_condition").css("height", ($(window).height() - 55) * 0.05 + "px");
+            $(".main_chart").css("height", ($(window).height() - 55) * 0.75 + "px");
+            $(".main_chart").css("width","100%");
+            $(".already_chart").css("height", ($(window).height() - 55) * 0.15 + "px");
+            $(".measure_source").css("height", ($(window).height() - 171 - 36 - 55 - 3) + "px");
+            $(".data_container").css("height", $(window).height() - 55 - 36 - 170 + "px");
+        }
+    </script>
+</head>
+<body>
+<div id="vue" @click="hide()">
+    <!--头部导航栏-->
+    <header class="header">
+        <ul class="header_ul">
+            <li>Prepare</li>
+            <li class="active">Visualize</li>
+            <li>Compose</li>
+        </ul>
+        <div class="clear"></div>
+    </header>
+    <!--左侧工具栏-->
+    <!--字段选择栏-->
+    <aside class="choose_fields">
+        <div v-show="choose_fields_show">
+            <!--操作栏-->
+            <div class="shrink_bar">
+                <!--搜索框-->
+                <chu-search-input></chu-search-input>
+                <!--收缩按钮-->
+                <div class="shrink" @click="shrink('choose_fields')"></div>
+            </div>
+            <!--度量容器-->
+            <div class="dimension_source">
+                <!--度量头部信息-->
+                <div class="menu_describe">
+                    <strong class="ml20">度量</strong><span class="ml10 f12 gray" v-text="dimension.length"></span>
+                </div>
+                <!--度量内容-->
+                <chu-ul :dimension="dimension" :aggregation="aggregation" v-on:change-agg="changeAgg"></chu-ul>
+            </div>
+            <!--控制区域大小的线-->
+            <div class="handle"></div>
+            <!--维容器-->
+            <div class="measure_source">
+                <!--维头部信息-->
+                <div class="menu_describe">
+                    <strong class="ml20">维</strong><span class="ml10 f12 gray" v-text="measure_length"></span>
+                </div>
+                <!--维内容-->
+                <chu-ul-menu :measure="measure" :settings="settings" :measure_length="measure_length"></chu-ul-menu>
+            </div>
+        </div>
+        <div v-show="!choose_fields_show">
+            <div class="shrink_bar">
+                <!--收缩按钮-->
+                <div class="shrink" @click="shrink('choose_fields')"></div>
+            </div>
+            <div class="f16 w10 mg_auto p15 hide_describe">维度和度量数据源</div>
+        </div>
+    </aside>
+    <!--图形选择栏-->
+    <aside class="edit_chart">
+        <div v-show="edit_chart_show">
+            <!--操作栏-->
+            <div class="shrink_bar">
+                <div class="shrink" @click="shrink('edit_chart')"></div>
+            </div>
+            <!--选择图形组件-->
+            <div class="choose_chart">
+                <chu-imgul :ulimg="ulimg[0]" @click.native.stop="showMenu('柱状图')">
+                    <chu-imgli v-show="objShow.柱状图" :ulword="ulword[0]" :liimg="liimg[0]" :liword="liword[0]"
+                               v-on:change-chart="changeChart"></chu-imgli>
+                </chu-imgul>
+                <chu-imgul :ulimg="ulimg[1]" @click.native.stop="showMenu('饼状图')">
+                    <chu-imgli v-show="objShow.饼状图" :ulword="ulword[1]" :liimg="liimg[1]" :liword="liword[1]"
+                               v-on:change-chart="changeChart"></chu-imgli>
+                </chu-imgul>
+                <chu-imgul :ulimg="ulimg[2]" @click.native.stop="showMenu('折线图')">
+                    <chu-imgli v-show="objShow.折线图" :ulword="ulword[2]" :liimg="liimg[2]"
+                               :liword="liword[2]"></chu-imgli>
+                </chu-imgul>
+                <chu-imgul :ulimg="ulimg[3]" @click.native.stop="showMenu('地图')">
+                    <chu-imgli v-show="objShow.地图" :ulword="ulword[3]" :liimg="liimg[3]"
+                               :liword="liword[3]"></chu-imgli>
+                </chu-imgul>
+                <chu-imgul :ulimg="ulimg[4]" @click.native.stop="showMenu('树状矩阵图')">
+                    <chu-imgli v-show="objShow.树状矩阵图" :ulword="ulword[4]" :liimg="liimg[4]"
+                               :liword="liword[4]"></chu-imgli>
+                </chu-imgul>
+                <chu-imgul :ulimg="ulimg[5]" @click.native.stop="showMenu('雷达图')">
+                    <chu-imgli v-show="objShow.雷达图" :ulword="ulword[5]" :liimg="liimg[5]"
+                               :liword="liword[5]"></chu-imgli>
+                </chu-imgul>
+                <chu-imgul :ulimg="ulimg[6]" @click.native.stop="showMenu('散点图')">
+                    <chu-imgli v-show="objShow.散点图" :ulword="ulword[6]" :liimg="liimg[6]"
+                               :liword="liword[6]"></chu-imgli>
+                </chu-imgul>
+                <chu-imgul :ulimg="ulimg[7]" @click.native.stop="showMenu('引力关系图')">
+                    <chu-imgli v-show="objShow.引力关系图" :ulword="ulword[7]" :liimg="liimg[7]"
+                               :liword="liword[7]"></chu-imgli>
+                </chu-imgul>
+            </div>
+            <div class="data_container">
+                <div class="w h20"></div>
+                <chu-d-container title="度量" subhead="Y轴" :set="dimensions_source" :dimensions_choose="dimensions" v-on:hide="hide"
+                                 v-on:d-push-data="DpushData"></chu-d-container>
+                <chu-m-container title="维度" subhead="X轴" :data_set="measures_source" :color_set="colors_source" :measures_choose="measures" :color_choose="colors"
+                                 v-on:hide="hide" v-on:m-push-data="MpushData"
+                                 v-on:c-push-data="CpushData"></chu-m-container>
+                <div class="clear"></div>
+            </div>
+        </div>
+        <div v-show="!edit_chart_show">
+            <div class="shrink_bar">
+                <!--收缩按钮-->
+                <div class="shrink" @click="shrink('edit_chart')"></div>
+            </div>
+            <div class="f16 w10 mg_auto p15 hide_describe">图形度量维度选择器</div>
+        </div>
+    </aside>
+    <!--主体展示栏-->
+    <main class="main">
+        <!--工具条-->
+        <header class="chart_tools">
+            <div class="handle_chart">
+                <input id="name-input" value="" maxlength="25" placeholder="命名作品" class="name-input"
+                       @keyup.enter="saveCharts" @click.stop="" v-on:click.stop=""/>
+                <a href="javascript:" class="tool_button save" @click.stop="saveCharts"></a>
+                <div class="subline"></div>
+                <a href="javascript:" class="tool_button refresh"></a>
+            </div>
+        </header>
+        <!--数据筛选项-->
+        <div class="chart_condition">
+            <a class="tool_button filter" @click.stop="showFilterMenu"></a>
+            <chu-filter-menu :measure_filters="measure_filters" :head="'维度筛选'" v-on:open-filter-dialog="showDialog"></chu-filter-menu>
+            <div v-for="(item,index) of filters_choose">
+                <div class="ready_filters">
+                    <img src="img/delete_black.png" class="delete_ready_filters" @click="deleteReadyFilters(index)">
+                    <div class="ready_filters_words">
+                        <a class="ml5">{{item.head}}:</a>
+                        <a class="ml5" v-for="val of item.val">
+                            {{val}}
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!--主图形展示-->
+        <section class="main_chart">
+            <chart id="chart" :options="polar" ></chart>
+        </section>
+        <!--完成的作品栏-->
+        <div class="already_chart">
+            <div class="addNew" @click="addNewChart"></div>
+            <div class="ready_charts">
+                <div class="direction_button toLeft" @click="LeftOrRight('left')" role="button"></div>
+                <div class="direction_button toRight" @click="LeftOrRight('right')" role="button"></div>
+                <div class="charts_bar">
+                    <chu-ready-charts :charts="ready_charts" v-on:reload-ready-chart="reloadReadyChart"></chu-ready-charts>
+                </div>
+            </div>
+        </div>
+        <!--完成作品的设置-->
+        <ul class="ready_chart_set">
+            <li @click="showDialog('del')"><span>删除</span></li>
+            <li @click="showDialog('rename')"><span>重命名</span></li>
+        </ul>
+    </main>
+    <chu-rename-dialog v-on:rename-chart="renameChart" v-on:hide-dialog="hideDialog"></chu-rename-dialog>
+    <chu-delete-dialog v-on:delete-chart="deleteReadyChart" v-on:hide-dialog="hideDialog"></chu-delete-dialog>
+    <chu-filter-dialog :filters="filters" v-on:hide-dialog="hideDialog" v-on:use-filters="useFilters"></chu-filter-dialog>
+</div>
+</body>
+<script src="js/base/vue.js"></script>
+<script src="js/base/echarts.js"></script>
+<script src="js/base/vue-echarts.js"></script>
+<script src="js/base/html2canvas.js"></script>
+<script src="js/chu-element.js"></script>
+<script src="js/echartInit.js"></script>
+<script>
+
+    Vue.component('chart', VueECharts);
+
+    var ulimg = ['img/chart1.png', 'img/chart2.png', 'img/chart3.png', 'img/chart4.png', 'img/chart1.png', 'img/chart2.png', 'img/chart3.png', 'img/chart4.png'];
+    var ulword = ['柱状图', '饼状图', '折线图', '地图', '树状矩阵图', '雷达图', '散点图', '引力关系图'];
+    var liimg = [['img/chart1.png', 'img/chart2.png'], ['img/chart3.png', 'img/chart4.png'], ['img/chart1.png', 'img/chart2.png'], ['img/chart3.png', 'img/chart4.png'], ['img/chart1.png', 'img/chart2.png'], ['img/chart3.png', 'img/chart4.png'], ['img/chart1.png', 'img/chart2.png'], ['img/chart3.png', 'img/chart4.png'],];
+    var liword = [['柱状图A', '柱状图B'], ['饼状图A', '饼状图B'], ['折线图A', '折线图B'], ['地图A', '地图B'], ['树状矩阵图A', '树状矩阵图B'], ['雷达图A', '雷达图B'], ['散点图A', '散点图B'], ['引力关系图A', '引力关系图B']];
+    var objShow = {柱状图: false, 饼状图: false, 折线图: false, 地图: false, 树状矩阵图: false, 雷达图: false, 散点图: false, 引力关系图: false};
+    var dimension = [{label: '度量1', set: {aggregation: '总和'}}, {label: '度量2', set: {aggregation: '平均值'}}, {
+        label: '度量3',
+        set: {aggregation: '总和'}
+    }, {label: '度量4', set: {aggregation: '最小值'}}];
+    var aggregation = [{label: '聚合函数', value: ['总和', '平均值', '最大值', '最小值', '无']}];
+    var settings = [{label: '设置', value: []}];
+    var measure = [{
+        label: '第一行',
+        img: 'img/logistic.png',
+        children: [{label: '内容1', img: 'img/task-management.png'}, {
+            label: '内容2',
+            img: 'img/task-management.png'
+        }, {label: '内容3', img: 'img/task-management.png'}]
+    }, {
+        label: '第二行',
+        img: 'img/logistic.png',
+        children: [{label: '内容一', img: 'img/task-management.png'}, {
+            label: '内容二',
+            img: 'img/task-management.png'
+        }, {label: '内容三', img: 'img/task-management.png'}]
+    }, {label: '第三行', img: 'img/logistic.png', children: []}];//children内容不要有重复
+    var color = [{
+        label: '第一行',
+        img: 'img/logistic.png',
+        children: [{label: '内容1', img: 'img/task-management.png'}, {
+            label: '内容2',
+            img: 'img/task-management.png'
+        }, {label: '内容3', img: 'img/task-management.png'}]
+    }, {
+        label: '第二行',
+        img: 'img/logistic.png',
+        children: [{label: '内容一', img: 'img/task-management.png'}, {
+            label: '内容二',
+            img: 'img/task-management.png'
+        }, {label: '内容三', img: 'img/task-management.png'}]
+    }, {label: '第三行', img: 'img/logistic.png', children: []}];//children内容不要有重复
+
+    var v = new Vue({
+        el: '#vue',
+        data: {
+                choose_fields_show: true,//左侧度量维度选择器隐藏与否
+                edit_chart_show: true,//左侧图形选择器隐藏与否
+                ulimg: ulimg,//图形选择按钮上的图片
+                ulword: ulword,//所有图形的描述
+                liimg: liimg,//一种图形的类别图片地址
+                liword: liword,//一种图形类别的描述
+                histogramShow: false,//柱状图选择器的可见性
+                objShow: objShow,//选择图形按钮下拉菜单的可见性
+                polar: testChart,//当前操作的图表
+                dimension: dimension,//度量数据
+                aggregation: aggregation,//度量的设置项
+                measure: measure,//维的数据
+                settings: settings,//维的设置项
+                measure_length: '',//维的长度
+                color: color,//颜色的数据
+                dimensions_source: [],//可选择的度量数据
+                measures_source: [],//可选择的维度数据
+                colors_source: [],//可选择的颜色
+                measure_filters:[],//可选择的维度筛选项
+                dimensions: [],//已选择的度量
+                measures: [],//已选择的维度
+                colors: [],//已选择的颜色
+                ready_charts: [],//已经编辑保存的图形
+                now_action: "",//记录当前操作类型，add和edit，分别表示新增图表和编辑原有图表
+                now_editChart: "",//记录当前编辑的图表在已保存的图表中的位置
+                filters:'',//维度筛选的数据
+                filters_choose:[],//已选择的维度筛选
+        },
+        methods: {
+            //点击选择图片按钮打开对应菜单
+            showMenu: function (value) {
+                this.objShow = {
+                    柱状图: false,
+                    饼状图: false,
+                    折线图: false,
+                    地图: false,
+                    树状矩阵图: false,
+                    雷达图: false,
+                    散点图: false,
+                    引力关系图: false
+                };
+                this.objShow[value] = true;
+                //event.cancelBubble = true;//阻止事件冒泡
+            },
+//            点击空白位置的事件
+            hide: function () {
+                //点击空白收起图片按钮菜单
+                this.objShow = {
+                    柱状图: false,
+                    饼状图: false,
+                    折线图: false,
+                    地图: false,
+                    树状矩阵图: false,
+                    雷达图: false,
+                    散点图: false,
+                    引力关系图: false
+                };
+                //隐藏设置菜单，按钮和背景色
+                $('.chu-ul-set').css('visibility', 'hidden');
+                $('.chu-menu-set').css('visibility', 'hidden');
+                $('.chu-ul-img-set').css('visibility', 'hidden');
+                $('.chu-ul-header').css('background-color', '#f6f6f6');
+                //维度度量容器设置
+                $('.chu-d-container-ul').css('visibility', 'hidden');
+                $('.chu-m-container-ul').css('visibility', 'hidden');
+                $('.chu-c-container-ul').css('visibility', 'hidden');
+                //图片命名输入框隐藏
+                $(".name-input").removeClass("name-input_show");
+                $(".save").removeClass("save_hover");
+                //作品设置隐藏
+                $(".ready_chart_set").css('visibility', 'hidden');
+                //隐藏筛选项菜单
+                $(".chu-m-filter-ul").css('visibility', 'hidden');
+                $(".filter").removeClass("filter_click");
+            },
+            //收缩(该方法有待改进)
+            shrink: function (val) {
+                $('.main').removeClass('main_shrink75');
+                $('.main').removeClass('main_shrink80');
+                $('.main').removeClass('main_shrink90');
+                if (val === "choose_fields") {
+                    $('.' + val).toggleClass("choose_fields_shrink");
+                    if($('.' + val).hasClass('choose_fields_shrink')){
+                        if($('.edit_chart').hasClass('edit_chart_shrink')){
+                            $('.main').addClass("main_shrink90");
+                        }else{
+                            $('.main').addClass("main_shrink75");
+                        }
+
+                    }else{
+                        if($('.edit_chart').hasClass('edit_chart_shrink')){
+                            $('.main').addClass("main_shrink80");
+                        }else{
+                            $('.main').removeClass('main_shrink75');
+                            $('.main').removeClass('main_shrink80');
+                            $('.main').removeClass('main_shrink90');
+                        }
+                    }
+                    $("." + val).hasClass("choose_fields_shrink") ? this.choose_fields_show = false : this.choose_fields_show = true;
+                } else if (val === "edit_chart") {
+                    $('.' + val).toggleClass("edit_chart_shrink");
+                    if($('.' + val).hasClass('edit_chart_shrink')){
+                        if($('.choose_fields').hasClass('choose_fields_shrink')){
+                            $('.main').addClass("main_shrink90");
+                        }else{
+                            $('.main').addClass("main_shrink80");
+                        }
+
+                    }else{
+                        if($('.choose_fields').hasClass('choose_fields_shrink')){
+                            $('.main').addClass("main_shrink75");
+                        }else{
+                            $('.main').removeClass('main_shrink75');
+                            $('.main').removeClass('main_shrink80');
+                            $('.main').removeClass('main_shrink90');
+                        }
+                    }
+                    $("." + val).hasClass("edit_chart_shrink") ? this.edit_chart_show = false : this.edit_chart_show = true;
+                }
+            },
+            //插入选择的度量
+            DpushData: function (type,val) {
+                if(type==="add"){
+                    this.dimensions.push(val);
+                    this.dimensions_source.splice($.inArray(val,this.dimensions_source),1);
+                }else if(type==="delete"){
+                    this.dimensions.splice($.inArray(val,this.dimensions),1);
+                    this.dimensions_source.unshift(val);
+                }
+                //根据当前选择的度量数据更新图表数据
+                //Ajax...
+                //以下是查看页面效果的临时方法
+                temporaryMethod();
+            },
+            //插入选择的维度
+            MpushData: function (type,val) {
+                if(type==="add"){
+                    this.measures.push(val);
+                    this.measures_source.splice($.inArray(val,this.measures_source),1);
+                }else if(type==="delete"){
+                    this.measures.splice($.inArray(val,this.measures),1);
+                    this.measures_source.unshift(val);
+                }
+                //根据当前选择的度量数据更新图表数据
+                //Ajax...
+                //以下是查看页面效果的临时方法
+                temporaryMethod();
+            },
+            //插入选择的颜色
+            CpushData: function (type,val) {
+                if(type==="add"){
+                    this.colors.push(val);
+                    this.colors_source.splice($.inArray(val,this.colors_source),1);
+                }else if(type==="delete"){
+                    this.colors.splice($.inArray(val,this.colors),1);
+                    this.colors_source.unshift(val);
+                }
+                //根据当前选择的度量数据更新图表数据
+                //Ajax...
+                //以下是查看页面效果的临时方法
+                temporaryMethod();
+            },
+            //修改度量的聚合函数
+            changeAgg: function (index, val) {
+                this.dimension[index].set.aggregation = val;
+                //根据度量的聚合函数查询对应信息
+                //Ajax...
+                //调用临时方法来展现页面效果
+                temporaryMethod();
+            },
+            //底部图片选择器
+            LeftOrRight: function (str) {
+                //没有图形时不滚动
+                if (!this.ready_charts.length > 0) {
+                    return;
+                }
+                //防止连续点击跑偏
+                if ($(".charts_bar").css('left').replace(/[^0-9]/ig, "") % 126 != 0 && $(".charts_bar").css('left') != '0px') {
+                    return;
+                }
+                if (str === "left") {
+                    if ($(".charts_bar").css('left') === '-' + $(".charts_bar").css('width')) {
+                        $(".charts_bar").css('left', '0px');
+                    } else {
+                        $(".charts_bar").animate({
+                            'left': "-=126px"
+                        }, 150);
+                    }
+                } else if (str === "right") {
+                    if ($(".charts_bar").css('left') === '0px') {
+                        return;
+                    } else {
+                        $(".charts_bar").animate({
+                            'left': "+=126px"
+                        }, 150)
+                    }
+                }
+            },
+            //添加新图形
+            addNewChart: function () {
+                //没有数据的柱状图
+                this.now_action = "add";
+                var newChart = deepCopy(testChart);
+                this.polar = newChart;
+                $("#chart").css("visibility", "visible");
+                this.initDMCData();
+            },
+            //载入保存的图形
+            reloadReadyChart: function (val, index) {
+                this.now_action = "edit";
+                this.now_editChart = index;
+                //当前操作图形加载为之前保存的图形
+                this.polar = deepCopy(val.set);
+                //加载保存的度量、维度、颜色、维度筛选项
+                this.dimensions = val.dimensions.slice(0);
+                this.measures = val.measures.slice(0);
+                this.colors = val.colors.slice(0);
+                this.filters_choose = val.filters_choose.slice(0);
+                //重新设置度量、维度、颜色的数据源
+                this.dimensions_source = getDimensionsSource();
+                this.measures_source = getMeasuresSource();
+                this.colors_source = getColorSource();
+                for(var i=0;i<val.dimensions.length;i++){
+                    this.dimensions_source.removeByValue(val.dimensions[i]);
+                }
+                for(var i=0;i<val.measures.length;i++){
+                    this.measures_source.removeByValue(val.measures[i]);
+                }
+                for(var i=0;i<val.colors.length;i++){
+                    this.colors_source.removeByValue(val.colors[i]);
+                }
+            },
+            //点击图形选择器变换图形
+            changeChart: function (val) {
+                this.now_action = "add";
+                this.polar = deepCopy(val);
+                $("#chart").css("visibility", "visible");
+                this.hide();
+                this.initDMCData();
+            },
+            //保存作品到作业栏
+            saveCharts: function () {
+                if (!$(".name-input").hasClass("name-input_show") && this.now_action === "add") {
+                    $(".name-input").addClass("name-input_show");
+                    $(".name-input").val("");
+                    $(".name-input").focus();
+                    $(".save").addClass("save_hover");
+                }
+                //输入图片名称后保存
+                if (this.now_action === "add" && $(".name-input").val().length > 0) {
+                    html2canvas($('#chart'), {
+                        allowTaint: true,
+                        taintTest: false,
+                        onrendered: function (canvas) {
+//                canvas.id = "mycanvas";
+                            v._data.polar.title.text = $(".name-input").val();//设置图片名称
+                            var ready_set = deepCopy(v._data.polar);
+                            //document.body.appendChild(canvas);
+                            //生成base64图片数据
+                            var dataUrl = canvas.toDataURL();
+//                var newImg = document.createElement("img");_bar的长
+//                newImg.src =  dataUrl;
+                            var chart_set = {thumbnail: dataUrl, set: ready_set, dimensions:v._data.dimensions, measures:v._data.measures, colors:v._data.colors,filters_choose:v._data.filters_choose};
+                            v._data.ready_charts.push(chart_set);
+                            $('.charts_bar').css('width', 126 + $('.chart_item').length * 126 + 'px');//设置charts度
+                        }
+                    });
+                    this.hide();
+                }
+                if (this.now_action === "edit") {
+                    html2canvas($('#chart'), {
+                        allowTaint: true,
+                        taintTest: false,
+                        onrendered: function (canvas) {
+                            var dataUrl = canvas.toDataURL();
+                            var ready_set = deepCopy(v._data.polar);
+                            v._data.ready_charts[v._data.now_editChart].thumbnail = dataUrl;
+                            v._data.ready_charts[v._data.now_editChart].set = ready_set;
+                            v._data.ready_charts[v._data.now_editChart].dimensions = v._data.dimensions;
+                            v._data.ready_charts[v._data.now_editChart].measures = v._data.measures;
+                            v._data.ready_charts[v._data.now_editChart].colors = v._data.colors;
+                            v._data.ready_charts[v._data.now_editChart].filters_choose = v._data.filters_choose;
+                        }
+                    });
+                }
+            },
+            //删除作品
+            deleteReadyChart:function () {
+                this.ready_charts.splice(this.now_editChart,1);
+                this.now_action = "add";
+                $('.charts_bar').css("width",$('.charts_bar').width()-126+"px");//设置作品所有长度
+                this.hideDialog('del');
+            },
+            //重命名作品
+            renameChart:function (val) {
+                this.ready_charts[this.now_editChart].set.title.text = val;
+                this.polar.title.text = val;
+                this.hideDialog('rename');
+            },
+            //显示模态框
+            showDialog:function (type,val) {
+                if(type==="rename"){
+                    $(".mask_rename").css('display',"block");
+                    $(".chu_rename_dialog").css("top",($(window).height()-$(".dialog").height())/2-120+"px");
+                }
+                if(type==="del"){
+                    $(".mask_delete").css('display',"block");
+                    $(".chu_delete_dialog").css("top",($(window).height()-$(".dialog").height())/2-120+"px");
+                }
+                if(type==='filter'){
+                    $('.chu-m-filter-ul').css('visibility','hidden');
+                    $(".mask_filter").css('display',"block");
+                    $(".chu_filter_dialog").css("top",($(window).height()-$(".dialog").height())/2-220+"px");
+                    //根据val参数查询维度的筛选项
+                    //Ajax...
+                    var filter= ['Argentina','Australia','Belgium','Brasil','Chile','China','Colombla','Denmark','Egypt'];
+                    this.filters = {head:val,filter:filter,len:filter.length};
+                }
+            },
+            //显示维度筛选项菜单
+            showFilterMenu:function () {
+                $('.filter').addClass('filter_click');
+                $('.chu-m-filter-ul').css('visibility','visible');
+                $('.chu-m-filter-ul').css('top',$('.filter').offset().top-6+'px');
+                $('.chu-m-filter-ul').css('left',$('.filter').offset().left+34+'px');
+            },
+            //维度筛选条件的应用
+            useFilters:function (head,val) {
+                var filters = new Object();
+                filters.head = head;
+                filters.val = val.slice(0);
+                this.filters_choose.push(filters);
+                //根据filters的条件查询图表数据
+                //Ajax...
+                //以下是查看页面效果的临时方法
+                temporaryMethod();
+                this.hideDialog('filter');
+            },
+            //删除选择的维度筛选
+            deleteReadyFilters:function (val) {
+                this.filters_choose.splice(val,1);
+                //根据filters的条件查询图表数据
+                //Ajax...
+                //以下是查看页面效果的临时方法
+                temporaryMethod();
+            },
+            //隐藏模态框
+            hideDialog:function (val) {
+                if(val==='del'){
+                    $(".mask_delete").css("display","none");
+                    $(".chu_delete_dialog").css("top","50px");
+                }
+                if(val==='rename'){
+                    $(".mask_rename").css("display","none");
+                    $(".chu_rename_dialog").css("top","50px");
+                }
+                if(val==='filter'){
+                    $(".mask_filter").css("display","none");
+                    $(".chu_filter_dialog").css("top","10px");
+                }
+            },
+            //切图时清空维度、度量、颜色的当前选项，恢复设置选项
+            initDMCData(){
+                this.dimensions = [];
+                this.measures = [];
+                this.colors = [];
+                this.filters_choose = [];
+                this.dimensions_source = getDimensionsSource();
+                this.measures_source = getMeasuresSource();
+                this.colors_source = getColorSource();
+                this.measure_filters = getMeasuresSource();
+            }
+        },
+    });
+</script>
+<script>
+    //handle缩放线
+    var isResizing = false;
+    $('.handle').on('mousedown', function (e) {
+        isResizing = true;
+    });
+    $(document).on('mousemove', function (e) {
+        // we don't want to do anything if we aren't resizing.
+        if (!isResizing)
+            return;
+        var DS_height = e.clientY - 36 - 55 + "px";//dimension_source的高度
+        var MS_height = $('.choose_fields').height() - e.clientY + 50;//measure_source的高度
+        if (MS_height > $(window).height() - 55 - 36 - 109) {
+            MS_height = $(window).height() - 55 - 36 - 109
+        }
+        $('.dimension_source').css('height', DS_height);
+        $(".measure_source").css("height", MS_height + "px");
+    }).on('mouseup', function (e) {
+        // stop resizing
+        isResizing = false;
+    });
+
+    //chu-dialog的计算尺寸
+    (function initChuDialog() {
+        $(".mask_rename").css("width",$(window).width()+"px");
+        $(".mask_rename").css("height",$(window).height()-55+"px");
+        $(".mask_delete").css("width",$(window).width()+"px");
+        $(".mask_delete").css("height",$(window).height()-55+"px");
+        $(".mask_filter").css("width",$(window).width()+"px");
+        $(".mask_filter").css("height",$(window).height()-55+"px");
+        $(".chu_delete_dialog").css("left",($(window).width()-$(".chu_delete_dialog").width())/2+"px");
+        $(".chu_rename_dialog").css("left",($(window).width()-$(".chu_rename_dialog").width())/2+"px");
+        $(".chu_filter_dialog").css("left",($(window).width()-$(".chu_filter_dialog").width())/2+"px");
+    })();
+</script>
+<script>
+    //获取对象长度
+    function getJsonLength(jsonData) {
+        var jsonLength = 0;
+        for (var item in jsonData) {
+            jsonLength++;
+        }
+        return jsonLength;
+    };
+
+    //为数组添加删除制定元素的原型方法
+    Array.prototype.removeByValue = function(val) {
+        for(var i=0; i<this.length; i++) {
+            if(this[i] == val) {
+                this.splice(i, 1);
+                break;
+            }
+        }
+    };
+
+    //对象的深度拷贝
+    function deepCopy(p, c) {
+        var c = c || {};
+        for (var i in p) {
+            if (typeof p[i] === 'object') {
+                c[i] = (p[i].constructor === Array) ? [] : {};
+                deepCopy(p[i], c[i]);
+            } else {
+                c[i] = p[i];
+            }
+        }
+        return c;
+    }
+
+    //获取维的长度
+    (function getMeasureLength() {
+        var measureLen = 0;
+        var len = v._data.measure.length;
+        for (var i = 0; i < len; i++) {
+            var olen = getJsonLength(v._data.measure[i]);
+            if (olen === 3) {
+                measureLen += v._data.measure[i].children.length + 1;
+            } else if (olen === 2) {
+                measureLen += 1;
+            }
+        }
+        v._data.measure_length = measureLen;
+    })();
+
+    //获取度量的数据源
+    function getDimensionsSource() {
+        var dimensions_source = [];
+        for (var i = 0; i < v._data.dimension.length; i++) {
+            dimensions_source.push(v._data.dimension[i].label);
+        }
+        return dimensions_source;
+    };
+
+    //获取维度的数据源
+    function getMeasuresSource() {
+        var measures_source = [];
+        for (var i = 0; i < v._data.measure.length; i++) {
+            measures_source.push(v._data.measure[i].label);
+            if (v._data.measure[i].children.length > 0) {
+                for (var j = 0; j < v._data.measure[i].children.length; j++) {
+                    measures_source.push(v._data.measure[i].children[j].label);
+                }
+            }
+        }
+        return measures_source;
+    };
+
+    //获取颜色的数据源
+    function getColorSource() {
+        var colors_source = [];
+        for (var i = 0; i < v._data.color.length; i++) {
+            colors_source.push(v._data.color[i].label);
+            if (v._data.color[i].children.length > 0) {
+                for (var j = 0; j < v._data.color[i].children.length; j++) {
+                    colors_source.push(v._data.color[i].children[j].label);
+                }
+            }
+        }
+        return colors_source;
+    };
+
+    //临时方法：选择维度、度量更改图形数据(实际要取到图表的具体信息来做更精确的判断)
+    function temporaryMethod() {
+        //没有图形时不执行此方法
+        if($('#chart').css("visibility")==="hidden"){return}
+        if(v._data.polar.series[0].type === "bar"){
+            var arr = [];
+            for(var i=0;i<20;i++){
+                arr[i] = Math.random()*300;
+            }
+            v._data.polar.series[0].data = arr;
+        }
+        if(v._data.polar.series[0].type === "pie"){
+            var arr = [];
+            var orarr = ['直接访问','邮件营销','联盟广告','视频广告','搜索引擎'];
+            for(var i=0;i<5;i++){
+//                arr[i] = {value:Math.random()*300,name: String.fromCharCode(Math.floor(Math.random()*26)+"A".charCodeAt(0),Math.floor(Math.random()*26)+"A".charCodeAt(0),Math.floor(Math.random()*26)+"A".charCodeAt(0),Math.floor(Math.random()*26)+"A".charCodeAt(0))}
+                arr[i] = {value:Math.random()*300,name:orarr[i]};
+            }
+            v._data.polar.series[0].data = arr;
+        }
+    }
+</script>
+</html>
